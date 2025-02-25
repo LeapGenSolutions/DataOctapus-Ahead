@@ -2,7 +2,7 @@ import Sidebar from "../components/Sidebar";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Setup from "../components/Setup";
 import Report from "../components/Report";
-import CoPilot from "../components/Copilot";
+import Copilot from "../components/Copilot";
 import AdminPanel from "../pages/AdminPanel";
 import UserPanel from "./UserPanel";
 import ControlPanel from "./ControlPanel";
@@ -21,7 +21,7 @@ export default function Dashboard({ setIsLoggedIn }) {
           <Route path="*" element={<Navigate to="/admin" />} />
         </Routes>
       </div>
-      <CoPilot />
+      <Copilot />
     </div>
   );
 }

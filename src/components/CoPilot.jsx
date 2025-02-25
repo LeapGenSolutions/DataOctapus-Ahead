@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import ComingSoon from "../assets/coming-soon.png";
 
-export default function CoPilot() {
+export default function Copilot() {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
