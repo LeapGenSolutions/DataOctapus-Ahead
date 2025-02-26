@@ -1,33 +1,22 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 const ControlPanel = () => {
+  const [pipelines, setPipelines] = useState([]);
   const [showMessage, setShowMessage] = useState(false);
   const [messageContent, setMessageContent] = useState("");
 
-  const pipelines = [
-    {
-      name: "Pipeline 1",
-      start: "10:00 AM",
-      end: "10:30 AM",
-      status: "Completed",
-      message: "Pipeline executed successfully",
-    },
-    {
-      name: "Pipeline 2",
-      start: "11:00 AM",
-      end: "11:45 AM",
-      status: "Failed",
-      message: "Error: Database connection lost",
-    },
-    {
-      name: "Pipeline 3",
-      start: "12:30 PM",
-      end: "1:00 PM",
-      status: "Running",
-      message: "Processing...",
-    },
-  ];
+  useEffect(() => {
+    const storedPipelines =
+      JSON.parse(localStorage.getItem("pipelineHistory")) || [];
+    setPipelines(storedPipelines);
+  }, []);
+
+  const updateStatus = (index, newStatus) => {
+    const updatedPipelines = [...pipelines];
+    updatedPipelines[index].status = newStatus;
+    localStorage.setItem("pipelineHistory", JSON.stringify(updatedPipelines));
+    setPipelines(updatedPipelines);
+  };
 
   return (
     <div className="p-4">
@@ -40,6 +29,7 @@ const ControlPanel = () => {
               <th className="border border-gray-300 p-2">Start Time</th>
               <th className="border border-gray-300 p-2">End Time</th>
               <th className="border border-gray-300 p-2">Status</th>
+              <th className="border border-gray-300 p-2">Actions</th>
               <th className="border border-gray-300 p-2">Message</th>
             </tr>
           </thead>
@@ -50,6 +40,20 @@ const ControlPanel = () => {
                 <td className="p-2">{pipeline.start}</td>
                 <td className="p-2">{pipeline.end}</td>
                 <td className="p-2">{pipeline.status}</td>
+                <td className="p-2 flex gap-2 justify-center">
+                  <button
+                    className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                    onClick={() => updateStatus(index, "Completed")}
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                    onClick={() => updateStatus(index, "Cancelled")}
+                  >
+                    Cancel
+                  </button>
+                </td>
                 <td className="p-2">
                   <button
                     className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"

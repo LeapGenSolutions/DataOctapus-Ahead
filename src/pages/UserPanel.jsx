@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Loader,
   CheckCircle,
@@ -27,7 +27,11 @@ export default function UserPanel() {
   // Dummy pipeline list for demonstration purposes
   const dummyPipelines = [
     { id: 1, name: "HR Database – SQL server – HR", runID: "RUN1234" },
-    { id: 2, name: "Data Source 2 – SQL server – Facet – Simulator", runID: "RUN5678" },
+    {
+      id: 2,
+      name: "Data Source 2 – SQL server – Facet – Simulator",
+      runID: "RUN5678",
+    },
   ];
 
   // Function to toggle selection of data techniques
@@ -64,6 +68,57 @@ export default function UserPanel() {
     }, 3000);
   };
 
+  const [pipelines, setPipelines] = useState([]);
+  const [savedConfig, setSavedConfig] = useState(null);
+
+  useEffect(() => {
+    const storedPipelines = JSON.parse(localStorage.getItem("pipelines")) || [];
+    setPipelines(storedPipelines);
+    const storedConfig = JSON.parse(localStorage.getItem("savedConfig"));
+    setSavedConfig(storedConfig);
+  }, []);
+
+  const savePipelines = (newPipelines) => {
+    setPipelines(newPipelines);
+    localStorage.setItem("pipelines", JSON.stringify(newPipelines));
+  };
+
+  const handleCreatePipeline = () => {
+    if (pipelineName.trim() === "") return;
+    const newPipeline = {
+      id: Date.now(),
+      name: pipelineName,
+      runID: `RUN${Date.now()}`,
+    };
+    savePipelines([...pipelines, newPipeline]);
+    setPipelineName("");
+    setStep(2);
+  };
+
+  const handleDeletePipeline = (id) => {
+    const updatedPipelines = pipelines.filter((pipeline) => pipeline.id !== id);
+    savePipelines(updatedPipelines);
+  };
+
+  const handleSaveConfiguration = () => {
+    const config = {
+      selectedTechniques,
+      ediChecked,
+      preserveChecked,
+      sourceSelected,
+      piiColumns,
+    };
+    localStorage.setItem("savedConfig", JSON.stringify(config));
+    setSavedConfig(config);
+  };
+
+  const addPipelineToHistory = (newPipeline) => {
+    const existingHistory =
+      JSON.parse(localStorage.getItem("pipelineHistory")) || [];
+    const updatedHistory = [newPipeline, ...existingHistory];
+    localStorage.setItem("pipelineHistory", JSON.stringify(updatedHistory));
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg mr-12">
       <h2 className="text-2xl font-bold">Create Data Pipeline</h2>
@@ -76,7 +131,7 @@ export default function UserPanel() {
         <div className="mt-12">
           <h3 className="text-lg font-semibold">Existing Pipelines</h3>
           <ul className="mt-2">
-            {dummyPipelines.map((pipeline) => (
+            {pipelines.map((pipeline) => (
               <li
                 key={pipeline.id}
                 className="flex justify-between bg-gray-100 p-2 rounded-lg mt-2"
@@ -88,12 +143,22 @@ export default function UserPanel() {
                   <button
                     className="text-red-600 cursor-pointer"
                     title="Delete"
+                    onClick={() => handleDeletePipeline(pipeline.id)}
                   >
                     <Trash size={16} />
                   </button>
                   <button
                     className="text-blue-600 cursor-pointer"
                     title="Trigger Pipeline"
+                    onClick={() => {
+                      addPipelineToHistory({
+                        name: pipeline.name, // Pipeline name from User Panel input
+                        start: new Date().toLocaleTimeString(),
+                        end: "Pending",
+                        status: "Running",
+                        message: "Processing...",
+                      });
+                    }}
                   >
                     <Play size={16} />
                   </button>
@@ -126,7 +191,10 @@ export default function UserPanel() {
           </label>
           <button
             className="bg-blue-600 text-white px-6 py-3 mt-4 rounded-lg hover:bg-blue-700"
-            onClick={() => setStep(2)}
+            onClick={() => {
+              handleCreatePipeline();
+              setStep(2);
+            }}
           >
             Create Pipeline
           </button>
@@ -147,10 +215,11 @@ export default function UserPanel() {
               (technique) => (
                 <button
                   key={technique}
-                  className={`px-4 py-2 rounded-lg ${selectedTechniques.includes(technique)
+                  className={`px-4 py-2 rounded-lg ${
+                    selectedTechniques.includes(technique)
                       ? "bg-blue-600 text-white"
                       : "bg-gray-200"
-                    }`}
+                  }`}
                   onClick={() => toggleTechnique(technique)}
                 >
                   {technique}
@@ -268,7 +337,17 @@ export default function UserPanel() {
           </button>
           <button
             className="bg-blue-600 text-white px-4 py-2 mt-4 rounded-lg cursor-pointer"
-            onClick={() => setStep(4)}
+            onClick={() => {
+              const config = {
+                selectedTechniques,
+                ediChecked,
+                preserveChecked,
+                sourceSelected,
+                piiColumns,
+              };
+              setSavedConfig(config);
+              setStep(4);
+            }}
           >
             Next
           </button>
@@ -282,7 +361,16 @@ export default function UserPanel() {
           <p className="text-gray-600">
             Review your configuration before running the pipeline.
           </p>
-          <button className="bg-gray-700 text-white px-4 py-2 mt-4 rounded-lg">
+          <h3 className="text-lg font-semibold">Saved Configuration</h3>
+          <p>Techniques: {savedConfig?.selectedTechniques.join(", ")}</p>
+          <p>EDI: {savedConfig?.ediChecked ? "Enabled" : "Disabled"}</p>
+          <p>Preserve: {savedConfig?.preserveChecked ? "Yes" : "No"}</p>
+          <p>Source Selected: {savedConfig?.sourceSelected}</p>
+          <p>PII Columns: {savedConfig?.piiColumns.length}</p>
+          <button
+            className="bg-gray-700 text-white px-4 py-2 mt-4 rounded-lg"
+            onClick={handleSaveConfiguration}
+          >
             Save Configuration
           </button>
           <div className="mt-4 flex space-x-2">
