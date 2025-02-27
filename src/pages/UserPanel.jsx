@@ -8,6 +8,7 @@ import {
   Play,
   Clock,
   List,
+  Edit,
 } from "lucide-react";
 
 export default function UserPanel() {
@@ -16,23 +17,14 @@ export default function UserPanel() {
   const [selectedTechniques, setSelectedTechniques] = useState([]);
   const [ediChecked, setEdiChecked] = useState(false);
   const [preserveChecked, setPreserveChecked] = useState(false);
-  const [sourceSelected, setSourceSelected] = useState("Source 1");
+  const [sourceSelected, setSourceSelected] = useState("");
+  const [sourceSelectedDB, setSourceSelectedDB] = useState("");
   const [step, setStep] = useState(1);
   const [selectedTechnique, setSelectedTechnique] = useState(null);
   const [piiAnalyzed, setPiiAnalyzed] = useState(false);
   const [piiColumns, setPiiColumns] = useState([]);
   const [pipelineRunning, setPipelineRunning] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-
-  // Dummy pipeline list for demonstration purposes
-  const dummyPipelines = [
-    { id: 1, name: "HR Database – SQL server – HR", runID: "RUN1234" },
-    {
-      id: 2,
-      name: "Data Source 2 – SQL server – Facet – Simulator",
-      runID: "RUN5678",
-    },
-  ];
 
   // Function to toggle selection of data techniques
   const toggleTechnique = (technique) => {
@@ -119,6 +111,13 @@ export default function UserPanel() {
     localStorage.setItem("pipelineHistory", JSON.stringify(updatedHistory));
   };
 
+  const [sources, setSources] = useState([]);
+
+  useEffect(() => {
+    const storedSources = JSON.parse(localStorage.getItem("sources")) || [];
+    setSources(storedSources);
+  }, []);
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg mr-12">
       <h2 className="text-2xl font-bold">Create Data Pipeline</h2>
@@ -170,9 +169,9 @@ export default function UserPanel() {
                   </button>
                   <button
                     className="text-gray-600 cursor-pointer"
-                    title="Show Run ID"
+                    title="Edit Pipeline ID"
                   >
-                    <List size={16} />
+                    <Edit size={16} />
                   </button>
                 </div>
               </li>
@@ -207,19 +206,31 @@ export default function UserPanel() {
           <h3 className="text-lg font-semibold">
             Step 1: Select Data Security Techniques
           </h3>
-          <p className="text-gray-600">
+          {/* <p className="text-gray-600">
             Source DB: <span className="text-black font-bold">Database_01</span>
-          </p>
+          </p> */}
+          <label className="flex flex-col w-[50%]">
+            Select Source DB
+            <select
+              className="border p-2 rounded"
+              value={sourceSelectedDB}
+              onChange={(e) => setSourceSelectedDB(e.target.value)}
+            >
+              <option>Select Source</option>
+              {sources.map((source) => {
+                return <option>{source.sourceName}</option>;
+              })}
+            </select>
+          </label>
           <div className="flex flex-wrap mt-4 gap-2">
             {["Masking", "Tokenization", "Anonymization", "Generate"].map(
               (technique) => (
                 <button
                   key={technique}
-                  className={`px-4 py-2 rounded-lg ${
-                    selectedTechniques.includes(technique)
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200"
-                  }`}
+                  className={`px-4 py-2 rounded-lg ${selectedTechniques.includes(technique)
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200"
+                    }`}
                   onClick={() => toggleTechnique(technique)}
                 >
                   {technique}
@@ -252,9 +263,10 @@ export default function UserPanel() {
                       value={sourceSelected}
                       onChange={(e) => setSourceSelected(e.target.value)}
                     >
-                      <option>Source 1</option>
-                      <option>Source 2</option>
-                      <option>Source 3</option>
+                      <option>Select Source</option>
+                      {sources.map((source) => {
+                        return <option>{source.sourceName}</option>;
+                      })}
                     </select>
                   </label>
                 )}
@@ -289,46 +301,30 @@ export default function UserPanel() {
             >
               Analyse PII
             </button>
-            <button
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg cursor-pointer"
-              onClick={handleShowPIIColumns}
-            >
-              Show PII Columns
-            </button>
           </div>
 
           {/* Loading Effect */}
           {piiAnalyzed && (
-            <p className="text-green-600 font-semibold mt-3 flex items-center">
-              <CheckCircle className="mr-2" size={20} /> PII Analysis Complete
-            </p>
-          )}
+            <>
+              <p className="text-green-600 font-semibold mt-3 flex items-center">
+                <CheckCircle className="mr-2" size={20} /> PII Analysis Complete
+              </p>
+              <label className="flex flex-col w-[50%]">
+                Destination Source DB
+                <select
+                  className="border p-2 rounded"
+                  value={sourceSelectedDB}
+                  onChange={(e) => setSourceSelectedDB(e.target.value)}
+                >
+                  <option>Select Source</option>
+                  {sources.map((source) => {
+                    return <option>{source.sourceName}</option>;
+                  })}
+                </select>
+              </label>
+            </>
 
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold">PII Column Details</h3>
-            {piiColumns.length > 0 ? (
-              <table className="w-full mt-4 border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-200">
-                    <th className="border p-2">Type of PII</th>
-                    <th className="border p-2">Column Name</th>
-                    <th className="border p-2">Table Name</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {piiColumns.map((row, index) => (
-                    <tr key={index} className="text-center">
-                      <td className="border p-2">{row.type}</td>
-                      <td className="border p-2">{row.original}</td>
-                      <td className="border p-2">{row.masked}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-gray-600 mt-2">No PII columns detected.</p>
-            )}
-          </div>
+          )}
           <button
             className="bg-gray-600 text-white px-4 py-2 rounded-lg"
             onClick={() => setStep(2)}
@@ -366,7 +362,7 @@ export default function UserPanel() {
           <p>EDI: {savedConfig?.ediChecked ? "Enabled" : "Disabled"}</p>
           <p>Preserve: {savedConfig?.preserveChecked ? "Yes" : "No"}</p>
           <p>Source Selected: {savedConfig?.sourceSelected}</p>
-          <p>PII Columns: {savedConfig?.piiColumns.length}</p>
+          {/* <p>PII Columns: {savedConfig?.piiColumns.length}</p> */}
           <button
             className="bg-gray-700 text-white px-4 py-2 mt-4 rounded-lg"
             onClick={handleSaveConfiguration}

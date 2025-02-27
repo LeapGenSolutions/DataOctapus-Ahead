@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AdminHeader from "./AdminHeader";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Setup() {
   const location = useLocation();
   const existingData = location.state || {}; // Data from edit
+  const navigate = useNavigate();
 
+  const [sourceName, setSourceName] = useState(existingData.sourceName || "");
   const [sourceType, setSourceType] = useState(existingData.type || "SQL");
   const [sourcecredentialType, setsourceCredentialType] = useState(
     existingData.sourcecredentialType || ""
@@ -37,7 +39,19 @@ export default function Setup() {
     existingData.preserveChecked || false
   );
   const [sourceSelected, setSourceSelected] = useState(
-    existingData.sourceSelected || "Source 1"
+    existingData.sourceSelected || ""
+  );
+  const [fqdn, setFqdn] = useState(existingData.fqdn || "");
+  const [databaseName, setDatabaseName] = useState(
+    existingData.databaseName || ""
+  );
+  const [username, setUsername] = useState(existingData.username || "");
+  const [password, setPassword] = useState(existingData.password || "");
+  const [servicePrincipleId, setServicePrincipleId] = useState(
+    existingData.servicePrincipleId || ""
+  );
+  const [servicePrincipleKey, setServicePrincipleKey] = useState(
+    existingData.servicePrincipleKey || ""
   );
 
   const handleSelectTable = (table) => {
@@ -50,6 +64,60 @@ export default function Setup() {
     setAvailableTables([...availableTables, table]);
   };
 
+  const [sources, setSources] = useState([]);
+
+  useEffect(() => {
+    const storedSources = JSON.parse(localStorage.getItem("sources")) || [];
+    setSources(storedSources);
+  }, []);
+
+  const saveSources = (newSources) => {
+    setSources(newSources);
+    localStorage.setItem("sources", JSON.stringify(newSources));
+  };
+
+  const handleCreateSource = () => {
+    if (sourceName.trim() === "") return alert("Enter Source Name!");
+    const newSource = {
+      id: Math.random().toString().slice(2, 6),
+      sourceName: sourceName,
+      type: sourceType,
+      authType: authType,
+      sourcecredentialType: sourcecredentialType,
+      credentialType: credentialType,
+      authMethod: authMethod,
+      sourceOption: sourceOption,
+      selectedTables: selectedTables,
+      ediChecked: ediChecked,
+      preserveChecked: preserveChecked,
+      sourceSelected: sourceSelected,
+      fqdn,
+      databaseName,
+      username,
+      password,
+      servicePrincipleId,
+      servicePrincipleKey,
+    };
+
+    if (existingData.id) {
+      // Update existing source
+      const updatedSources = sources.map((source) =>
+        source.id === existingData.id ? newSource : source
+      );
+      saveSources(updatedSources);
+    } else {
+      // Create new source
+      saveSources([...sources, newSource]);
+    }
+
+    navigate("/admin");
+  };
+
+  const handleDeleteSource = (id) => {
+    const updatedSources = sources.filter((source) => source.id !== id);
+    saveSources(updatedSources);
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
       <AdminHeader />
@@ -57,6 +125,16 @@ export default function Setup() {
 
       {step === 1 && (
         <>
+          <label className="flex flex-col">
+            Source Name
+            <input
+              type="text"
+              placeholder="Source Name"
+              value={sourceName}
+              onChange={(e) => setSourceName(e.target.value)}
+              className="border p-2 rounded-lg w-[50%]"
+            />
+          </label>
           {/* Source Type */}
           <div className="mt-4">
             <h4 className="text-md font-bold">Source Type</h4>
@@ -97,9 +175,10 @@ export default function Setup() {
                         value={sourceSelected}
                         onChange={(e) => setSourceSelected(e.target.value)}
                       >
-                        <option>Source 1</option>
-                        <option>Source 2</option>
-                        <option>Source 3</option>
+                        <option>Select Source</option>
+                        {sources.map((source) => {
+                          return <option>{source.sourceName}</option>;
+                        })}
                       </select>
                     </label>
                   )}
@@ -131,7 +210,7 @@ export default function Setup() {
               Cloud
             </button>
           </div>
-          {sourcecredentialType === "On-Prem" && (
+          {sourcecredentialType && (
             <>
               {/* Fully Qualified Domain Name & Database Name */}
               <div className="mt-4 flex flex-col w-[50%]">
@@ -141,14 +220,22 @@ export default function Setup() {
                     type="text"
                     placeholder="FQDN"
                     className="p-3 border rounded-lg mb-2"
+                    value={fqdn}
+                    onChange={(e) => setFqdn(e.target.value)}
                   />
                 </label>
                 <label className="flex flex-col">
-                  Database Name
+                  {sourceType == "Files" ? "Host" : "Database Name"}
                   <input
                     type="text"
-                    placeholder="Database Name"
+                    placeholder={
+                      sourceType == "Files"
+                        ? "eg. \\\\Server Name\\Shared Folder"
+                        : "Database Name"
+                    }
                     className="p-3 border rounded-lg mb-2"
+                    value={databaseName}
+                    onChange={(e) => setDatabaseName(e.target.value)}
                   />
                 </label>
               </div>
@@ -159,6 +246,7 @@ export default function Setup() {
                 <select
                   className="p-3 border rounded-lg mt-2 w-[50%]"
                   onChange={(e) => setAuthType(e.target.value)}
+                  value={authType}
                 >
                   <option value="">Select Authentication Type</option>
                   <option value="SQL Auth">SQL Auth</option>
@@ -174,6 +262,8 @@ export default function Setup() {
                       type="text"
                       placeholder="Username"
                       className="p-3 border rounded-lg mb-2"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                     />
                   </label>
                   <h4 className="text-md font-bold">Authentication Method</h4>
@@ -187,16 +277,18 @@ export default function Setup() {
                   >
                     Password
                   </button>
-                  <button
-                    className={`p-2 ${
-                      credentialType === "Azure Key Vault"
-                        ? "bg-purple-500 text-white"
-                        : "bg-gray-300"
-                    }`}
-                    onClick={() => setCredentialType("Azure Key Vault")}
-                  >
-                    Azure Key Vault
-                  </button>
+                  {sourcecredentialType === "Cloud" && (
+                    <button
+                      className={`p-2 ${
+                        credentialType === "Azure Key Vault"
+                          ? "bg-purple-500 text-white"
+                          : "bg-gray-300"
+                      }`}
+                      onClick={() => setCredentialType("Azure Key Vault")}
+                    >
+                      Azure Key Vault
+                    </button>
+                  )}
 
                   {credentialType === "Password" && (
                     <div className="mt-4 flex flex-col w-[50%]">
@@ -206,6 +298,8 @@ export default function Setup() {
                           type="password"
                           placeholder="Password"
                           className="p-3 border rounded-lg"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
                         />
                       </label>
                     </div>
@@ -247,6 +341,7 @@ export default function Setup() {
                       type="radio"
                       name="authMethod"
                       value="Inline"
+                      checked={authMethod === "Inline"}
                       onChange={() => setAuthMethod("Inline")}
                     />{" "}
                     Inline
@@ -256,6 +351,7 @@ export default function Setup() {
                       type="radio"
                       name="authMethod"
                       value="Credential"
+                      checked={authMethod === "Credential"}
                       onChange={() => setAuthMethod("Credential")}
                     />{" "}
                     Credential
@@ -269,6 +365,10 @@ export default function Setup() {
                           type="text"
                           placeholder="Service Principle ID"
                           className="p-3 border rounded-lg mb-2"
+                          value={servicePrincipleId}
+                          onChange={(e) =>
+                            setServicePrincipleId(e.target.value)
+                          }
                         />
                       </label>
                       <h4 className="text-md font-bold">
@@ -303,6 +403,10 @@ export default function Setup() {
                           type="text"
                           placeholder="Service Principle Key"
                           className="p-3 border rounded-lg mt-2"
+                          value={servicePrincipleKey}
+                          onChange={(e) =>
+                            setServicePrincipleKey(e.target.value)
+                          }
                         />
                       )}
 
@@ -335,9 +439,15 @@ export default function Setup() {
 
               <button
                 className="p-2 bg-blue-500 text-white mt-4"
-                onClick={() => setStep(2)}
+                onClick={() => {
+                  if (sourceType === "Files") {
+                    handleCreateSource();
+                  } else {
+                    setStep(2);
+                  }
+                }}
               >
-                Create Connection
+                {sourceType === "Files" ? "Create Source" : "Next"}
               </button>
             </>
           )}
@@ -346,88 +456,94 @@ export default function Setup() {
 
       {step === 2 && (
         <>
-          <h3 className="text-lg font-bold">Create Source</h3>
+          {sourceType !== "Files" ? (
+            <>
+              <h3 className="text-lg font-bold">Create Source</h3>
 
-          {/* Radio options for data selection */}
-          <div className="mt-4">
-            <label className="block">
-              <input
-                type="radio"
-                name="sourceOption"
-                value="all"
-                checked={sourceOption === "all"}
-                onChange={() => setSourceOption("all")}
-              />
-              Select All Tables
-            </label>
-            <label className="block">
-              <input
-                type="radio"
-                name="sourceOption"
-                value="listTables"
-                checked={sourceOption === "listTables"}
-                onChange={() => setSourceOption("listTables")}
-              />
-              List Specific Tables
-            </label>
-            <label className="block">
-              <input
-                type="radio"
-                name="sourceOption"
-                value="writeQuery"
-                checked={sourceOption === "writeQuery"}
-                onChange={() => setSourceOption("writeQuery")}
-              />
-              Write a Query
-            </label>
-          </div>
-
-          {/* Show query input box when "Write a Query" is selected */}
-          {sourceOption === "writeQuery" && (
-            <div className="mt-4">
-              <h4 className="text-md font-bold">Enter Your Query</h4>
-              <textarea
-                className="w-full p-3 border rounded-lg"
-                placeholder="Write your SQL query here..."
-              />
-            </div>
-          )}
-
-          {/* Show dual table selection when "List Specific Tables" is selected */}
-          {sourceOption === "listTables" && (
-            <div className="mt-4 flex gap-6">
-              {/* Available Tables */}
-              <div className="w-1/2">
-                <h4 className="text-md font-bold">Available Tables</h4>
-                <ul className="border p-3 rounded-lg h-40 overflow-auto">
-                  {availableTables.map((table) => (
-                    <li
-                      key={table}
-                      className="cursor-pointer p-2 hover:bg-gray-200"
-                      onClick={() => handleSelectTable(table)}
-                    >
-                      {table}
-                    </li>
-                  ))}
-                </ul>
+              {/* Radio options for data selection */}
+              <div className="mt-4">
+                <label className="block">
+                  <input
+                    type="radio"
+                    name="sourceOption"
+                    value="all"
+                    checked={sourceOption === "all"}
+                    onChange={() => setSourceOption("all")}
+                  />
+                  Select All Tables
+                </label>
+                <label className="block">
+                  <input
+                    type="radio"
+                    name="sourceOption"
+                    value="listTables"
+                    checked={sourceOption === "listTables"}
+                    onChange={() => setSourceOption("listTables")}
+                  />
+                  List Specific Tables
+                </label>
+                <label className="block">
+                  <input
+                    type="radio"
+                    name="sourceOption"
+                    value="writeQuery"
+                    checked={sourceOption === "writeQuery"}
+                    onChange={() => setSourceOption("writeQuery")}
+                  />
+                  Write a Query
+                </label>
               </div>
 
-              {/* Selected Tables */}
-              <div className="w-1/2">
-                <h4 className="text-md font-bold">Selected Tables</h4>
-                <ul className="border p-3 rounded-lg h-40 overflow-auto">
-                  {selectedTables.map((table) => (
-                    <li
-                      key={table}
-                      className="cursor-pointer p-2 hover:bg-gray-200"
-                      onClick={() => handleDeselectTable(table)}
-                    >
-                      {table}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+              {/* Show query input box when "Write a Query" is selected */}
+              {sourceOption === "writeQuery" && (
+                <div className="mt-4">
+                  <h4 className="text-md font-bold">Enter Your Query</h4>
+                  <textarea
+                    className="w-full p-3 border rounded-lg"
+                    placeholder="Write your SQL query here..."
+                  />
+                </div>
+              )}
+
+              {/* Show dual table selection when "List Specific Tables" is selected */}
+              {sourceOption === "listTables" && (
+                <div className="mt-4 flex gap-6">
+                  {/* Available Tables */}
+                  <div className="w-1/2">
+                    <h4 className="text-md font-bold">Available Tables</h4>
+                    <ul className="border p-3 rounded-lg h-40 overflow-auto">
+                      {availableTables.map((table) => (
+                        <li
+                          key={table}
+                          className="cursor-pointer p-2 hover:bg-gray-200"
+                          onClick={() => handleSelectTable(table)}
+                        >
+                          {table}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Selected Tables */}
+                  <div className="w-1/2">
+                    <h4 className="text-md font-bold">Selected Tables</h4>
+                    <ul className="border p-3 rounded-lg h-40 overflow-auto">
+                      {selectedTables.map((table) => (
+                        <li
+                          key={table}
+                          className="cursor-pointer p-2 hover:bg-gray-200"
+                          onClick={() => handleDeselectTable(table)}
+                        >
+                          {table}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <p>Click on the button below to create connection.</p>
           )}
 
           {/* Navigation Buttons */}
@@ -437,8 +553,11 @@ export default function Setup() {
           >
             Back
           </button>
-          <button className="p-2 bg-green-500 text-white mt-4 ml-2">
-            Confirm Selection
+          <button
+            onClick={handleCreateSource}
+            className="p-2 bg-green-500 text-white mt-4 ml-2"
+          >
+            {existingData.id ? "Update Source" : "Create Source"}
           </button>
         </>
       )}

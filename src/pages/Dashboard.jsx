@@ -10,6 +10,9 @@ import ControlPanel from "./ControlPanel";
 export default function Dashboard({ setIsLoggedIn }) {
   return (
     <div className="flex w-full h-full overflow-hidden">
+      <div className="absolute bottom-4 right-12 text-gray-500 shadow-md px-2 py-1 rounded-md text-sm font-medium">
+        Licensed Version: Valid till Aug 24
+      </div>
       <Sidebar setIsLoggedIn={setIsLoggedIn} />
       <div className="flex-1 p-6 bg-gray-100 overflow-x-scroll">
         <Routes>

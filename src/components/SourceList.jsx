@@ -1,38 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function SourceList() {
   const navigate = useNavigate();
-  const [sources, setSources] = useState([
-    {
-      id: 1,
-      name: "Source 1",
-      type: "SQL",
-      authType: "SQL Auth",
-      sourcecredentialType: "On-Prem",
-      credentialType: "Password",
-      authMethod: "Inline",
-      sourceOption: "listTables",
-      selectedTables: ["Item 1", "Item 2"],
-      ediChecked: true,
-      preserveChecked: true,
-      sourceSelected: true,
-    },
-    {
-      id: 2,
-      name: "Source 2",
-      type: "Oracle",
-      authType: "Service Principle",
-      sourcecredentialType: "Cloud",
-      credentialType: "Azure Key Vault",
-      authMethod: "Inline",
-      sourceOption: "listTables",
-      selectedTables: ["Item 1", "Item 2"],
-      ediChecked: true,
-      preserveChecked: true,
-      sourceSelected: true,
-    },
-  ]);
+  const [sources, setSources] = useState([]);
+
+  useEffect(() => {
+    const storedSources = JSON.parse(localStorage.getItem("sources")) || [];
+    setSources(storedSources);
+  }, []);
 
   const handleEdit = (source) => {
     navigate(`/setup`, { state: source });
@@ -52,9 +28,9 @@ export default function SourceList() {
           </tr>
         </thead>
         <tbody>
-          {sources.map((source) => (
+          {sources?.map((source) => (
             <tr key={source.id} className="text-center">
-              <td className="p-2 border">{source.name}</td>
+              <td className="p-2 border">{source.sourceName}</td>
               <td className="p-2 border">{source.type}</td>
               <td className="p-2 border">{source.credentialType}</td>
               <td className="p-2 border">{source.authType}</td>
