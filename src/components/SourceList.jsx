@@ -10,6 +10,16 @@ export default function SourceList() {
     setSources(storedSources);
   }, []);
 
+  const handleDeleteSource = (id) => {
+    const updatedSources = sources.filter((source) => source.id !== id);
+    saveSources(updatedSources);
+  };
+
+  const saveSources = (newSources) => {
+    setSources(newSources);
+    localStorage.setItem("sources", JSON.stringify(newSources));
+  };
+
   const handleEdit = (source) => {
     navigate(`/setup`, { state: source });
   };
@@ -37,9 +47,15 @@ export default function SourceList() {
               <td className="p-2 border">
                 <button
                   onClick={() => handleEdit(source)}
-                  className="bg-blue-500 text-white px-3 py-1 rounded"
+                  className="bg-blue-500 text-white px-3 py-1 rounded cursor-pointer mr-2"
                 >
                   Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteSource(source.id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded cursor-pointer"
+                >
+                  Delete
                 </button>
               </td>
             </tr>

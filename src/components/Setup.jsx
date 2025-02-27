@@ -248,19 +248,21 @@ export default function Setup() {
           <div className="mt-4">
             <h4 className="text-md font-bold">Source Credentials</h4>
             <button
-              className={`p-2 mr-2 ${sourcecredentialType === "On-Prem"
-                ? "bg-purple-500 text-white"
-                : "bg-gray-300"
-                }`}
+              className={`p-2 mr-2 ${
+                sourcecredentialType === "On-Prem"
+                  ? "bg-purple-500 text-white"
+                  : "bg-gray-300"
+              }`}
               onClick={() => setsourceCredentialType("On-Prem")}
             >
               On-Prem
             </button>
             <button
-              className={`p-2 ${sourcecredentialType === "Cloud"
-                ? "bg-purple-500 text-white"
-                : "bg-gray-300"
-                }`}
+              className={`p-2 ${
+                sourcecredentialType === "Cloud"
+                  ? "bg-purple-500 text-white"
+                  : "bg-gray-300"
+              }`}
               onClick={() => setsourceCredentialType("Cloud")}
             >
               Cloud
@@ -272,7 +274,9 @@ export default function Setup() {
                 {/* Fully Qualified Domain Name & Database Name */}
                 <div className="mt-4 flex flex-col w-[50%]">
                   <label className="flex flex-col">
-                    {edi834 ? "Fully Qualified Domain Name (EDI 834)" : "Fully Qualified Domain Name"}
+                    {edi834
+                      ? "Fully Qualified Domain Name (EDI 834)"
+                      : "Fully Qualified Domain Name"}
 
                     <input
                       type="text"
@@ -307,12 +311,14 @@ export default function Setup() {
                     value={authType}
                   >
                     <option value="">Select Authentication Type</option>
-                    <option value="SQL Auth">SQL Auth</option>
+                    <option value={sourceType == "Files" ? "Auth" : "SQL Auth"}>
+                      {sourceType == "Files" ? "Auth" : "SQL Auth"}
+                    </option>
                     <option value="Service Principle">Service Principle</option>
                   </select>
                 </div>
                 {/* Credentials for SQL Auth */}
-                {authType === "SQL Auth" && (
+                {(authType === "SQL Auth" || authType === "Auth") && (
                   <div className="mt-2">
                     <label className="flex flex-col w-[50%] mt-2">
                       Username
@@ -326,10 +332,11 @@ export default function Setup() {
                     </label>
                     <h4 className="text-md font-bold">Authentication Method</h4>
                     <button
-                      className={`p-2 mr-2 ${credentialType === "Password"
-                        ? "bg-purple-500 text-white"
-                        : "bg-gray-300"
-                        }`}
+                      className={`p-2 mr-2 ${
+                        credentialType === "Password"
+                          ? "bg-purple-500 text-white"
+                          : "bg-gray-300"
+                      }`}
                       onClick={() => setCredentialType("Password")}
                     >
                       Password
@@ -433,10 +440,11 @@ export default function Setup() {
                         </h4>
                         <div className="flex flex-row gap-1">
                           <button
-                            className={`p-2 mr-2 ${credentialType === "Service Principle Key"
-                              ? "bg-purple-500 text-white"
-                              : "bg-gray-300"
-                              }`}
+                            className={`p-2 mr-2 ${
+                              credentialType === "Service Principle Key"
+                                ? "bg-purple-500 text-white"
+                                : "bg-gray-300"
+                            }`}
                             onClick={() =>
                               setCredentialType("Service Principle Key")
                             }
@@ -535,12 +543,12 @@ export default function Setup() {
                     value={authTypeedi837}
                   >
                     <option value="">Select Authentication Type</option>
-                    <option value="SQL Auth">SQL Auth</option>
+                    <option value="Auth">Auth</option>
                     <option value="Service Principle">Service Principle</option>
                   </select>
                 </div>
                 {/* Credentials for SQL Auth */}
-                {authTypeedi837 === "SQL Auth" && (
+                {authTypeedi837 === "Auth" && (
                   <div className="mt-2">
                     <label className="flex flex-col w-[50%] mt-2">
                       Username
@@ -554,10 +562,11 @@ export default function Setup() {
                     </label>
                     <h4 className="text-md font-bold">Authentication Method</h4>
                     <button
-                      className={`p-2 mr-2 ${credentialTypeedi837 === "Password"
-                        ? "bg-purple-500 text-white"
-                        : "bg-gray-300"
-                        }`}
+                      className={`p-2 mr-2 ${
+                        credentialTypeedi837 === "Password"
+                          ? "bg-purple-500 text-white"
+                          : "bg-gray-300"
+                      }`}
                       onClick={() => setCredentialTypeedi837("Password")}
                     >
                       Password
@@ -661,10 +670,11 @@ export default function Setup() {
                         </h4>
                         <div className="flex flex-row gap-1">
                           <button
-                            className={`p-2 mr-2 ${credentialTypeedi837 === "Service Principle Key"
-                              ? "bg-purple-500 text-white"
-                              : "bg-gray-300"
-                              }`}
+                            className={`p-2 mr-2 ${
+                              credentialTypeedi837 === "Service Principle Key"
+                                ? "bg-purple-500 text-white"
+                                : "bg-gray-300"
+                            }`}
                             onClick={() =>
                               setCredentialTypeedi837("Service Principle Key")
                             }
