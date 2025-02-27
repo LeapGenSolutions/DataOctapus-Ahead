@@ -9,7 +9,7 @@ export default function Sidebar({ setIsLoggedIn }) {
       <div>
         <img src={Logo} alt="Logo" className="w-24 h-24 mx-auto mb-6" />
         <h2 className="text-2xl font-semibold mb-2">Dashboard</h2>
-        <p className="mb-4 text-2xl">Hi, John Doe</p>
+        <p className="mb-4 text-2xl">Hi, Madhu Chanthati</p>
         {[
           { name: "Admin", path: "/admin" },
           { name: "User", path: "/user" },

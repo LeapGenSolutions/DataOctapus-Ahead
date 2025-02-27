@@ -57,6 +57,13 @@ export default function UserPanel() {
     setTimeout(() => {
       setPipelineRunning(false);
       setShowSummary(true);
+      addPipelineToHistory({
+        name: pipelines[pipelines.length-1].name, // Pipeline name from User Panel input
+        start: new Date().toLocaleTimeString(),
+        end: "Pending",
+        status: "Running",
+        message: "Processing...",
+      });
     }, 3000);
   };
 
@@ -431,10 +438,10 @@ export default function UserPanel() {
           {showSummary && (
             <div className="mt-4">
               <p className="text-gray-700">
-                ✔ Security Technique: {selectedTechnique}
+                ✔ Security Techniques Applied
               </p>
               <p className="text-gray-700">
-                ✔ PII Columns Analyzed: {piiColumns.length}
+                ✔ PII Columns Analyzed
               </p>
               <p className="text-gray-700">✔ Status: Pipeline Completed</p>
             </div>
