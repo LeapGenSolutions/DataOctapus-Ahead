@@ -58,7 +58,7 @@ export default function UserPanel() {
       setPipelineRunning(false);
       setShowSummary(true);
       addPipelineToHistory({
-        name: pipelines[pipelines.length-1].name, // Pipeline name from User Panel input
+        name: pipelines[pipelines.length - 1].name, // Pipeline name from User Panel input
         start: new Date().toLocaleTimeString(),
         end: "Pending",
         status: "Running",
@@ -82,21 +82,49 @@ export default function UserPanel() {
     localStorage.setItem("pipelines", JSON.stringify(newPipelines));
   };
 
-  const handleCreatePipeline = () => {
+  const handleCreatePipeline = async () => {
     if (pipelineName.trim() === "") return;
+    const pipelineId = Math.random().toString().slice(2, 9);
+
     const newPipeline = {
-      id: Date.now(),
+      id: pipelineId,
       name: pipelineName,
       runID: `RUN${Date.now()}`,
     };
-    savePipelines([...pipelines, newPipeline]);
-    setPipelineName("");
-    setStep(2);
+
+    try {
+      const response = await fetch("http://localhost:8000/pipelines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newPipeline),
+      });
+
+      if (!response.ok) throw new Error("Failed to create pipeline");
+
+      const createdPipeline = await response.json();
+      savePipelines([...pipelines, createdPipeline]); // Update local state
+      setPipelineName("");
+      setStep(2);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleDeletePipeline = (id) => {
-    const updatedPipelines = pipelines.filter((pipeline) => pipeline.id !== id);
-    savePipelines(updatedPipelines);
+  const handleDeletePipeline = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8000/pipelines/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete pipeline");
+
+      const updatedPipelines = pipelines.filter(
+        (pipeline) => pipeline.id !== id
+      );
+      savePipelines(updatedPipelines); // Update local state
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleSaveConfiguration = () => {
@@ -234,10 +262,11 @@ export default function UserPanel() {
               (technique) => (
                 <button
                   key={technique}
-                  className={`px-4 py-2 rounded-lg ${selectedTechniques.includes(technique)
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200"
-                    }`}
+                  className={`px-4 py-2 rounded-lg ${
+                    selectedTechniques.includes(technique)
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200"
+                  }`}
                   onClick={() => toggleTechnique(technique)}
                 >
                   {technique}
@@ -330,7 +359,6 @@ export default function UserPanel() {
                 </select>
               </label>
             </>
-
           )}
           <button
             className="bg-gray-600 text-white px-4 py-2 rounded-lg"
@@ -437,12 +465,8 @@ export default function UserPanel() {
 
           {showSummary && (
             <div className="mt-4">
-              <p className="text-gray-700">
-                ✔ Security Techniques Applied
-              </p>
-              <p className="text-gray-700">
-                ✔ PII Columns Analyzed
-              </p>
+              <p className="text-gray-700">✔ Security Techniques Applied</p>
+              <p className="text-gray-700">✔ PII Columns Analyzed</p>
               <p className="text-gray-700">✔ Status: Pipeline Completed</p>
             </div>
           )}

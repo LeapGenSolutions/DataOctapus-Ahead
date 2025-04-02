@@ -103,7 +103,7 @@ export default function Setup() {
     localStorage.setItem("sources", JSON.stringify(newSources));
   };
 
-  const handleCreateSource = () => {
+  const handleCreateSource = async () => {
     if (sourceName.trim() === "") return alert("Enter Source Name!");
     const newSource = {
       id: Math.random().toString().slice(2, 6),
@@ -137,18 +137,50 @@ export default function Setup() {
       servicePrincipleKeyedi837,
     };
 
-    if (existingData.id) {
-      // Update existing source
-      const updatedSources = sources.map((source) =>
-        source.id === existingData.id ? newSource : source
-      );
-      saveSources(updatedSources);
-    } else {
-      // Create new source
-      saveSources([...sources, newSource]);
-    }
+    console.log(newSource);
 
-    navigate("/admin");
+    try {
+      if (existingData.id) {
+        // **Update Existing Source**
+        const response = await fetch(
+          `http://localhost:8000/sources/${existingData.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newSource),
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to update source");
+
+        const updatedSource = await response.json();
+
+        // **Update Local State**
+        const updatedSources = sources.map((source) =>
+          source.id === existingData.id ? updatedSource : source
+        );
+        saveSources(updatedSources);
+      } else {
+        // **Create New Source**
+        const response = await fetch("http://localhost:8000/sources", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newSource),
+        });
+
+        if (!response.ok) throw new Error("Failed to create source");
+
+        const createdSource = await response.json();
+
+        // **Update Local State**
+        saveSources([...sources, createdSource]);
+      }
+
+      navigate("/admin"); // Redirect after success
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Something went wrong!");
+    }
   };
 
   const handleDeleteSource = (id) => {

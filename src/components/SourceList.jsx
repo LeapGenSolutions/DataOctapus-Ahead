@@ -10,9 +10,22 @@ export default function SourceList() {
     setSources(storedSources);
   }, []);
 
-  const handleDeleteSource = (id) => {
-    const updatedSources = sources.filter((source) => source.id !== id);
-    saveSources(updatedSources);
+  const handleDeleteSource = async (id) => {
+    try {
+      // **Delete from CosmosDB**
+      const response = await fetch(`http://localhost:8000/sources/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete source");
+
+      // **Update Local State**
+      const updatedSources = sources.filter((source) => source.id !== id);
+      saveSources(updatedSources);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to delete source!");
+    }
   };
 
   const saveSources = (newSources) => {
@@ -23,6 +36,7 @@ export default function SourceList() {
   const handleEdit = (source) => {
     navigate(`/setup`, { state: source });
   };
+
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-lg">
