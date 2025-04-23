@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import pybase64
 
 app = FastAPI()
 
@@ -18,7 +19,7 @@ app.add_middleware(
 
 # Load CosmosDB connection details from environment variables
 COSMOSDB_ENDPOINT = os.getenv("COSMOSDB_ENDPOINT", "https://data-octapus-admin-source-list.documents.azure.com:443/")
-COSMOSDB_KEY = os.getenv("COSMOSDB_KEY")
+COSMOSDB_KEY = os.getenv("COSMOSDB_KEY", pybase64.b64decode("WXpURE9PcW9GVkY0QXNDaDdyUDNmTk5kYzc0c2FDemhGa25KTzR0bEFidFhSSnA2RE9LRFhBOXd6dnd0NnB0NzBUWTNDUTI0UXpxVEFDRGJxZlNxTWc9PQ=="))
 DATABASE_NAME = "admin-sources"
 CONTAINER_NAME = "source-list"
 
@@ -185,3 +186,37 @@ async def delete_pipeline(pipeline_id: str):
         raise HTTPException(status_code=404, detail="Pipeline not found")
     except exceptions.CosmosHttpResponseError:
         raise HTTPException(status_code=500, detail="Failed to delete pipeline")
+
+
+
+
+CONTAINER_NAME_HISTORY = "pipeline-history"
+container_history = database.get_container_client(CONTAINER_NAME_HISTORY)
+
+# ✅ Pipeline History Model
+class PipelineHistory(BaseModel):
+    name: str
+    start: str
+    end: str
+    status: str
+    message: str
+
+# 🔹 Fetch All Pipeline History
+@app.get("/pipelines/history")
+async def get_pipeline_history():
+    try:
+        history = list(container_history.read_all_items())
+        response = JSONResponse(content=history)
+        return add_cors_headers(response)
+    except exceptions.CosmosHttpResponseError:
+        raise HTTPException(status_code=500, detail="Failed to fetch pipeline history")
+
+# 🔹 Add New Pipeline to History
+@app.post("/pipelines/history")
+async def add_pipeline_to_history(history: PipelineHistory):
+    try:
+        container_history.create_item(history.dict())
+        response = JSONResponse(content=history.dict())
+        return add_cors_headers(response)
+    except exceptions.CosmosHttpResponseError:
+        raise HTTPException(status_code=500, detail="Failed to save pipeline history")

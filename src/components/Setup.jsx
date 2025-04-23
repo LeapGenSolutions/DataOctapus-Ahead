@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminHeader from "./AdminHeader";
 import { useLocation, useNavigate } from "react-router-dom";
+import tableData from "../assets/output.json";
 
 export default function Setup() {
   const location = useLocation();
@@ -30,14 +31,6 @@ export default function Setup() {
   const [sourceOption, setSourceOption] = useState(
     existingData.sourceOption || ""
   );
-  const [availableTables, setAvailableTables] = useState([
-    "Countries",
-    "Departments",
-    "Employees",
-    "Job History",
-    "Locations",
-    "Regions",
-  ]);
   const [selectedTables, setSelectedTables] = useState(
     existingData.selectedTables || []
   );
@@ -81,15 +74,59 @@ export default function Setup() {
     existingData.servicePrincipleKeyedi837 || ""
   );
 
-  const handleSelectTable = (table) => {
-    setAvailableTables(availableTables.filter((t) => t !== table));
-    setSelectedTables([...selectedTables, table]);
+  // const [selectedTables, setSelectedTables] = useState([]);
+  const [columnSettings, setColumnSettings] = useState({});
+
+  const handleToggleTable = (tableKey) => {
+    if (selectedTables.includes(tableKey)) {
+      setSelectedTables(selectedTables.filter((t) => t !== tableKey));
+      const newSettings = { ...columnSettings };
+      delete newSettings[tableKey];
+      setColumnSettings(newSettings);
+    } else {
+      setSelectedTables([...selectedTables, tableKey]);
+      const columns = tableData[tableKey];
+      const initialSettings = {};
+      Object.keys(columns).forEach((col) => {
+        initialSettings[col] = {
+          anonymization: false,
+          masking: false,
+          tokenization: false,
+        };
+      });
+      setColumnSettings({
+        ...columnSettings,
+        [tableKey]: initialSettings,
+      });
+    }
   };
 
-  const handleDeselectTable = (table) => {
-    setSelectedTables(selectedTables.filter((t) => t !== table));
-    setAvailableTables([...availableTables, table]);
+  const handleCheckboxChange = (tableKey, column, settingType) => {
+    setColumnSettings((prev) => ({
+      ...prev,
+      [tableKey]: {
+        ...prev[tableKey],
+        [column]: {
+          ...prev[tableKey][column],
+          [settingType]: !prev[tableKey][column][settingType],
+        },
+      },
+    }));
   };
+
+  // Fetch schema JSON from API
+  useEffect(() => {
+    const fetchSchema = async () => {
+      try {
+        const res = await fetch("https://yourapi.com/schema"); // Update URL
+        // setSelectedTables(res.data);
+      } catch (err) {
+        alert("Failed to fetch schema");
+        console.error(err);
+      }
+    };
+    fetchSchema();
+  }, []);
 
   const [sources, setSources] = useState([]);
 
@@ -833,38 +870,101 @@ export default function Setup() {
 
               {/* Show dual table selection when "List Specific Tables" is selected */}
               {sourceOption === "listTables" && (
-                <div className="mt-4 flex gap-6">
-                  {/* Available Tables */}
-                  <div className="w-1/2">
-                    <h4 className="text-md font-bold">Available Tables</h4>
-                    <ul className="border p-3 rounded-lg h-40 overflow-auto">
-                      {availableTables.map((table) => (
+                <div className="p-6">
+                  <h2 className="text-xl font-bold mb-4">Available Tables</h2>
+                  <ul className="border p-3 rounded-lg h-40 overflow-auto mb-6">
+                    {Object.keys(tableData).map((tableKey) => {
+                      const tableShort = tableKey.split(".")[1];
+                      const isSelected = selectedTables.includes(tableKey);
+                      return (
                         <li
-                          key={table}
-                          className="cursor-pointer p-2 hover:bg-gray-200"
-                          onClick={() => handleSelectTable(table)}
+                          key={tableKey}
+                          className={`cursor-pointer p-2 hover:bg-gray-200 ${
+                            isSelected ? "bg-gray-100" : ""
+                          }`}
+                          onClick={() => handleToggleTable(tableKey)}
                         >
-                          {table}
+                          {tableShort}
                         </li>
-                      ))}
-                    </ul>
-                  </div>
+                      );
+                    })}
+                  </ul>
 
-                  {/* Selected Tables */}
-                  <div className="w-1/2">
-                    <h4 className="text-md font-bold">Selected Tables</h4>
-                    <ul className="border p-3 rounded-lg h-40 overflow-auto">
-                      {selectedTables.map((table) => (
-                        <li
-                          key={table}
-                          className="cursor-pointer p-2 hover:bg-gray-200"
-                          onClick={() => handleDeselectTable(table)}
-                        >
-                          {table}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {selectedTables.map((tableKey) => {
+                    const tableShort = tableKey.split(".")[1];
+                    const columns = Object.keys(tableData[tableKey]);
+
+                    return (
+                      <div key={tableKey} className="mb-8">
+                        <h3 className="text-lg font-semibold mb-2">
+                          {tableShort}
+                        </h3>
+                        <ul className="border p-4 rounded-lg">
+                          {columns.map((col) => (
+                            <li
+                              key={col}
+                              className="flex items-center justify-between py-2 border-b"
+                            >
+                              <span className="w-1/3">{col}</span>
+                              <div className="flex gap-4">
+                                <label>
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      columnSettings[tableKey]?.[col]
+                                        ?.anonymization || false
+                                    }
+                                    onChange={() =>
+                                      handleCheckboxChange(
+                                        tableKey,
+                                        col,
+                                        "anonymization"
+                                      )
+                                    }
+                                  />{" "}
+                                  Anonymization
+                                </label>
+                                <label>
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      columnSettings[tableKey]?.[col]
+                                        ?.masking || false
+                                    }
+                                    onChange={() =>
+                                      handleCheckboxChange(
+                                        tableKey,
+                                        col,
+                                        "masking"
+                                      )
+                                    }
+                                  />{" "}
+                                  Masking
+                                </label>
+                                <label>
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      columnSettings[tableKey]?.[col]
+                                        ?.tokenization || false
+                                    }
+                                    onChange={() =>
+                                      handleCheckboxChange(
+                                        tableKey,
+                                        col,
+                                        "tokenization"
+                                      )
+                                    }
+                                  />{" "}
+                                  Tokenization
+                                </label>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>

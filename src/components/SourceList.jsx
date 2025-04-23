@@ -37,6 +37,28 @@ export default function SourceList() {
     navigate(`/setup`, { state: source });
   };
 
+  // useEffect(() => {
+  //   const getSources = async () => {
+  //     const data = await fetchSources();
+  //     setSources(data);
+  //     saveSources(data);
+  //   };
+  //   getSources();
+  // }, []);
+
+  // const fetchSources = async () => {
+  //   try {
+  //     const response = await fetch("http://127.0.0.1:8000/sources");
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! Status: ${response.status}`);
+  //     }
+  //     const data = await response.json();
+  //     return data;
+  //   } catch (error) {
+  //     console.error("Error fetching sources:", error);
+  //     return [];
+  //   }
+  // };
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-lg">

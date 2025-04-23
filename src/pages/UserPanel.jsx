@@ -139,11 +139,28 @@ export default function UserPanel() {
     setSavedConfig(config);
   };
 
-  const addPipelineToHistory = (newPipeline) => {
-    const existingHistory =
-      JSON.parse(localStorage.getItem("pipelineHistory")) || [];
-    const updatedHistory = [newPipeline, ...existingHistory];
-    localStorage.setItem("pipelineHistory", JSON.stringify(updatedHistory));
+  // ✅ Save Pipeline History Locally & to Backend
+  const addPipelineToHistory = async (newPipeline) => {
+    try {
+      // Update Local Storage
+      const existingHistory =
+        JSON.parse(localStorage.getItem("pipelineHistory")) || [];
+      const updatedHistory = [newPipeline, ...existingHistory];
+      localStorage.setItem("pipelineHistory", JSON.stringify(updatedHistory));
+
+      // Send to Backend
+      const response = await fetch("http://localhost:8000/pipelines/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newPipeline),
+      });
+
+      if (!response.ok) throw new Error("Failed to save pipeline history");
+
+      fetchPipelineHistory(); // Refresh history list
+    } catch (error) {
+      console.error("Error saving pipeline history:", error);
+    }
   };
 
   const [sources, setSources] = useState([]);

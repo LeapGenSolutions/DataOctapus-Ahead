@@ -95,10 +95,19 @@ const ControlPanel = () => {
   const [messageContent, setMessageContent] = useState("");
 
   useEffect(() => {
-    const storedPipelines =
-      JSON.parse(localStorage.getItem("pipelineHistory")) || [];
-    setPipelines(storedPipelines);
+    fetchPipelineHistory();
   }, []);
+
+  // ✅ Fetch Pipeline History from Backend
+  const fetchPipelineHistory = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/pipelines/history");
+      const data = await response.json();
+      setPipelines(data);
+    } catch (error) {
+      console.error("Error fetching pipeline history:", error);
+    }
+  };
 
   const updateStatus = (index, newStatus) => {
     const updatedPipelines = [...pipelines];
